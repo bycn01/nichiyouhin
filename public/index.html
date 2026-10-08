@@ -121,7 +121,9 @@
   .busy { opacity: .6; pointer-events: none; }
   [hidden] { display: none !important; }
 
-  .gate { min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: calc(16vh + env(safe-area-inset-top, 0px)) 16px 24px; }
+  /* 合言葉の画面は画面にぴったり固定して、スワイプで動かないようにする */
+  .gate { position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none; touch-action: none; display: flex; align-items: flex-start; justify-content: center; padding: calc(16vh + env(safe-area-inset-top, 0px)) 16px 24px; }
+  html:has(.gate:not([hidden])), html:has(.gate:not([hidden])) body { overflow: hidden; overscroll-behavior: none; }
   .gate-box { width: min(380px, 100%); background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 24px 20px; text-align: center; }
   .gate-box img { width: 72px; height: 72px; border-radius: 16px; }
   .gate-box h1 { margin: 10px 0 4px; }
