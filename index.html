@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#f6f4ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1c1b19" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="こうかん帳">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>日用品こうかん帳</title>
+<style>
+  :root {
+    --bg: #f6f4ef;
+    --card: #ffffff;
+    --text: #2b2a28;
+    --sub: #77736b;
+    --line: #e4e0d7;
+    --accent: #3c7a5a;
+    --accent-weak: #e3efe8;
+    --ok: #3c7a5a;
+    --soon: #c98a12;
+    --soon-weak: #fbf1dc;
+    --over: #c2453a;
+    --over-weak: #fae4e1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1b19;
+      --card: #262522;
+      --text: #ece9e2;
+      --sub: #a29d93;
+      --line: #3a3833;
+      --accent: #6fbf94;
+      --accent-weak: #24372c;
+      --ok: #6fbf94;
+      --soon: #e3b04f;
+      --soon-weak: #3b3120;
+      --over: #ec7b70;
+      --over-weak: #402523;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: calc(16px + env(safe-area-inset-top, 0px)) 16px 96px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 0 16px; }
+  h1 { font-size: 1.35rem; margin: 0; }
+  .today { color: var(--sub); font-size: .85rem; }
+
+  .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+  .sum { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px; text-align: center; cursor: pointer; }
+  .sum b { display: block; font-size: 1.5rem; }
+  .sum span { font-size: .8rem; color: var(--sub); }
+  .sum.over b { color: var(--over); }
+  .sum.soon b { color: var(--soon); }
+  .sum.ok b { color: var(--ok); }
+  .sum.active { outline: 2px solid var(--accent); }
+
+  .filters { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 10px; }
+  .chip { flex: none; border: 1px solid var(--line); background: var(--card); color: var(--text); border-radius: 999px; padding: 5px 12px; font-size: .85rem; cursor: pointer; }
+  .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .list { display: flex; flex-direction: column; gap: 10px; }
+  .item { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+  .item.over { border-left: 6px solid var(--over); }
+  .item.soon { border-left: 6px solid var(--soon); }
+  .item.ok { border-left: 6px solid var(--ok); }
+  .row1 { display: flex; align-items: center; gap: 10px; }
+  .icon { font-size: 1.6rem; width: 2rem; text-align: center; }
+  .name { font-weight: bold; font-size: 1.05rem; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .badge { font-size: .8rem; font-weight: bold; padding: 2px 10px; border-radius: 999px; white-space: nowrap; }
+  .badge.over { background: var(--over-weak); color: var(--over); }
+  .badge.soon { background: var(--soon-weak); color: var(--soon); }
+  .badge.ok { background: var(--accent-weak); color: var(--ok); }
+  .bar { height: 6px; background: var(--line); border-radius: 3px; margin: 10px 0 6px; overflow: hidden; }
+  .bar i { display: block; height: 100%; border-radius: 3px; }
+  .meta { font-size: .8rem; color: var(--sub); display: flex; flex-wrap: wrap; gap: 4px 14px; }
+  .memo { font-size: .85rem; margin-top: 4px; white-space: pre-wrap; }
+  .actions { display: flex; gap: 8px; margin-top: 10px; }
+  button { font: inherit; }
+  .btn { border: 1px solid var(--line); background: var(--card); color: var(--text); border-radius: 10px; padding: 8px 12px; cursor: pointer; font-size: .9rem; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: bold; flex: 1; }
+  .btn.danger { color: var(--over); }
+
+  .empty { text-align: center; color: var(--sub); padding: 40px 10px; }
+
+  .fab { position: fixed; right: 20px; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); width: 60px; height: 60px; border-radius: 50%; border: none; background: var(--accent); color: #fff; font-size: 2rem; box-shadow: 0 4px 14px rgba(0,0,0,.25); cursor: pointer; }
+
+  .tools { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .tools .btn { font-size: .8rem; color: var(--sub); }
+
+  dialog { border: none; border-radius: 16px; padding: 0; width: min(520px, calc(100% - 24px)); background: var(--card); color: var(--text); }
+  dialog::backdrop { background: rgba(0,0,0,.45); }
+  .dlg { padding: 18px; }
+  .dlg h2 { margin: 0 0 12px; font-size: 1.15rem; }
+  label { display: block; font-size: .85rem; color: var(--sub); margin: 10px 0 4px; }
+  input, select, textarea { width: 100%; font: inherit; padding: 9px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text); }
+  textarea { min-height: 60px; resize: vertical; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+  .presets .chip { font-size: .8rem; }
+  .interval { display: flex; gap: 6px; }
+  .interval input { flex: 1; }
+  .interval select { width: 6.5em; }
+  .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+  .history { font-size: .8rem; color: var(--sub); margin-top: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🧺 日用品こうかん帳</h1>
+    <div class="today" id="today"></div>
+  </header>
+
+  <div class="summary">
+    <div class="sum over" data-st="over"><b id="cOver">0</b><span>期限切れ</span></div>
+    <div class="sum soon" data-st="soon"><b id="cSoon">0</b><span>もうすぐ</span></div>
+    <div class="sum ok" data-st="ok"><b id="cOk">0</b><span>まだ大丈夫</span></div>
+  </div>
+
+  <div class="filters" id="filters"></div>
+  <div class="list" id="list"></div>
+
+  <div class="tools">
+    <button class="btn" id="btnExport">💾 バックアップを保存</button>
+    <button class="btn" id="btnImport">📂 バックアップから復元</button>
+    <input type="file" id="fileImport" accept=".json,application/json" hidden>
+  </div>
+</div>
+
+<button class="fab" id="btnAdd" aria-label="追加">＋</button>
+
+<dialog id="dlg">
+  <form class="dlg" method="dialog" id="form">
+    <h2 id="dlgTitle">日用品を追加</h2>
+    <div id="presetArea">
+      <label>よく使うものから選ぶ（タップで入力）</label>
+      <div class="presets" id="presets"></div>
+    </div>
+    <label for="fName">名前</label>
+    <input id="fName" required placeholder="例：歯ブラシ（パパ）">
+    <div class="two">
+      <div>
+        <label for="fCat">分類</label>
+        <select id="fCat"></select>
+      </div>
+      <div>
+        <label for="fInterval">交換の目安</label>
+        <div class="interval">
+          <input id="fInterval" type="number" min="1" required value="30">
+          <select id="fUnit">
+            <option value="1">日ごと</option>
+            <option value="7">週ごと</option>
+            <option value="30">か月ごと</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <label for="fStart">使い始めた日（前回交換した日）</label>
+    <input id="fStart" type="date" required>
+    <label for="fMemo">メモ（品番・買う店など）</label>
+    <textarea id="fMemo" placeholder="例：〇〇ドラッグで3本セット"></textarea>
+    <div class="history" id="fHistory"></div>
+    <div class="dlg-actions">
+      <button type="button" class="btn" id="btnCancel">やめる</button>
+      <button type="submit" class="btn primary" style="flex:none">保存</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+const KEY = "nichiyouhin-v1";
+const SOON_DAYS = 7;
+const CATS = [
+  { id: "bath", label: "洗面・お風呂", icon: "🪥" },
+  { id: "kitchen", label: "キッチン", icon: "🍳" },
+  { id: "clean", label: "掃除・洗濯", icon: "🧽" },
+  { id: "home", label: "家電・住まい", icon: "🏠" },
+  { id: "bed", label: "寝具・衣類", icon: "🛏️" },
+  { id: "kids", label: "こども", icon: "🧸" },
+  { id: "other", label: "その他", icon: "📦" },
+];
+const PRESETS = [
+  ["歯ブラシ", "bath", 30], ["カミソリの刃", "bath", 14], ["バスタオル", "bath", 365],
+  ["キッチンスポンジ", "kitchen", 30], ["浄水器カートリッジ", "kitchen", 90], ["まな板", "kitchen", 365],
+  ["排水口ネット", "kitchen", 7], ["換気扇フィルター", "home", 90], ["エアコンフィルター掃除", "home", 14],
+  ["空気清浄機フィルター", "home", 365], ["火災報知器の電池", "home", 3650], ["枕", "bed", 730],
+  ["お風呂のスポンジ", "clean", 60], ["トイレブラシ", "clean", 180],
+];
+
+// ---- データ ----
+let items = load();
+let filterCat = "all";
+let filterSt = null;
+let editingId = null;
+
+function load() {
+  try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return []; }
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(items)); }
+  catch { alert("保存できませんでした。ブラウザの設定を確認してください。"); }
+}
+
+// ---- 日付 ----
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+function parse(s) { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); }
+function addDays(s, n) { const d = parse(s); d.setDate(d.getDate()+n); return d; }
+function diffDays(a, b) { return Math.round((a - b) / 86400000); }
+function fmt(d) { if (typeof d === "string") d = parse(d); return `${d.getMonth()+1}/${d.getDate()}`; }
+function fmtFull(d) { if (typeof d === "string") d = parse(d); return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`; }
+
+function intervalText(days) {
+  if (days % 365 === 0) return `${days/365}年ごと`;
+  if (days % 30 === 0) return `${days/30}か月ごと`;
+  if (days % 7 === 0) return `${days/7}週間ごと`;
+  return `${days}日ごと`;
+}
+
+function status(it) {
+  const due = addDays(it.start, it.interval);
+  const left = diffDays(due, parse(todayStr()));
+  const used = diffDays(parse(todayStr()), parse(it.start));
+  const st = left < 0 ? "over" : left <= Math.min(SOON_DAYS, Math.ceil(it.interval * 0.25)) ? "soon" : "ok";
+  return { due, left, used, st, ratio: Math.min(1, Math.max(0, used / it.interval)) };
+}
+
+// ---- 描画 ----
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function cat(id) { return CATS.find(c => c.id === id) || CATS[CATS.length-1]; }
+
+function render() {
+  document.getElementById("today").textContent = "今日 " + fmtFull(todayStr());
+
+  const withSt = items.map(it => ({ it, s: status(it) }));
+  const count = { over: 0, soon: 0, ok: 0 };
+  withSt.forEach(x => count[x.s.st]++);
+  cOver.textContent = count.over; cSoon.textContent = count.soon; cOk.textContent = count.ok;
+  document.querySelectorAll(".sum").forEach(el => el.classList.toggle("active", el.dataset.st === filterSt));
+
+  // 分類フィルター
+  const used = new Set(items.map(i => i.cat));
+  const chips = [`<button class="chip ${filterCat==="all"?"active":""}" data-cat="all">すべて</button>`]
+    .concat(CATS.filter(c => used.has(c.id)).map(c =>
+      `<button class="chip ${filterCat===c.id?"active":""}" data-cat="${c.id}">${c.icon} ${c.label}</button>`));
+  filters.innerHTML = chips.join("");
+
+  const shown = withSt
+    .filter(x => filterCat === "all" || x.it.cat === filterCat)
+    .filter(x => !filterSt || x.s.st === filterSt)
+    .sort((a, b) => a.s.left - b.s.left);
+
+  if (!items.length) {
+    list.innerHTML = `<div class="empty">まだ何も登録されていません。<br>右下の <b>＋</b> から追加してください。</div>`;
+    return;
+  }
+  if (!shown.length) {
+    list.innerHTML = `<div class="empty">この条件に当てはまるものはありません。</div>`;
+    return;
+  }
+
+  list.innerHTML = shown.map(({ it, s }) => {
+    const c = cat(it.cat);
+    const badge = s.left < 0 ? `${-s.left}日すぎ` : s.left === 0 ? "今日まで" : `あと${s.left}日`;
+    const color = `var(--${s.st === "ok" ? "ok" : s.st})`;
+    return `<div class="item ${s.st}">
+      <div class="row1">
+        <div class="icon">${c.icon}</div>
+        <div class="name">${esc(it.name)}</div>
+        <span class="badge ${s.st}">${badge}</span>
+      </div>
+      <div class="bar"><i style="width:${s.ratio*100}%;background:${color}"></i></div>
+      <div class="meta">
+        <span>交換日 ${fmt(s.due)}</span>
+        <span>${intervalText(it.interval)}</span>
+        <span>使い始め ${fmt(it.start)}（${s.used}日目）</span>
+      </div>
+      ${it.memo ? `<div class="memo">📝 ${esc(it.memo)}</div>` : ""}
+      <div class="actions">
+        <button class="btn primary" data-act="done" data-id="${it.id}">✅ 今日交換した</button>
+        <button class="btn" data-act="edit" data-id="${it.id}">編集</button>
+        <button class="btn danger" data-act="del" data-id="${it.id}">削除</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ---- 操作 ----
+filters.addEventListener("click", e => {
+  const b = e.target.closest("[data-cat]"); if (!b) return;
+  filterCat = b.dataset.cat; render();
+});
+document.querySelector(".summary").addEventListener("click", e => {
+  const b = e.target.closest("[data-st]"); if (!b) return;
+  filterSt = filterSt === b.dataset.st ? null : b.dataset.st; render();
+});
+list.addEventListener("click", e => {
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const it = items.find(i => i.id === b.dataset.id); if (!it) return;
+  if (b.dataset.act === "done") {
+    if (!confirm(`「${it.name}」を今日交換したことにしますか？`)) return;
+    it.history = (it.history || []).concat(it.start).slice(-20);
+    it.start = todayStr();
+    save(); render();
+  } else if (b.dataset.act === "edit") {
+    openDialog(it);
+  } else if (b.dataset.act === "del") {
+    if (!confirm(`「${it.name}」を一覧から消しますか？\n（元に戻せません）`)) return;
+    items = items.filter(i => i !== it);
+    save(); render();
+  }
+});
+
+// ---- 追加・編集ダイアログ ----
+fCat.innerHTML = CATS.map(c => `<option value="${c.id}">${c.icon} ${c.label}</option>`).join("");
+presets.innerHTML = PRESETS.map(([n, c, d], i) => `<button type="button" class="chip" data-p="${i}">${cat(c).icon} ${n}</button>`).join("");
+presets.addEventListener("click", e => {
+  const b = e.target.closest("[data-p]"); if (!b) return;
+  const [n, c, d] = PRESETS[b.dataset.p];
+  fName.value = n; fCat.value = c; setIntervalField(d);
+});
+
+function setIntervalField(days) {
+  if (days % 30 === 0) { fUnit.value = "30"; fInterval.value = days / 30; }
+  else if (days % 7 === 0) { fUnit.value = "7"; fInterval.value = days / 7; }
+  else { fUnit.value = "1"; fInterval.value = days; }
+}
+
+function openDialog(it) {
+  editingId = it ? it.id : null;
+  dlgTitle.textContent = it ? "編集" : "日用品を追加";
+  presetArea.hidden = !!it;
+  fName.value = it ? it.name : "";
+  fCat.value = it ? it.cat : "bath";
+  setIntervalField(it ? it.interval : 30);
+  fStart.value = it ? it.start : todayStr();
+  fMemo.value = it ? (it.memo || "") : "";
+  fHistory.textContent = it && it.history && it.history.length
+    ? "これまでの交換日：" + it.history.concat(it.start).map(fmtFull).join(" → ") : "";
+  dlg.showModal();
+}
+btnAdd.onclick = () => openDialog(null);
+btnCancel.onclick = () => dlg.close();
+
+form.addEventListener("submit", () => {
+  const data = {
+    name: fName.value.trim(),
+    cat: fCat.value,
+    interval: Math.max(1, Number(fInterval.value) * Number(fUnit.value)),
+    start: fStart.value || todayStr(),
+    memo: fMemo.value.trim(),
+  };
+  if (!data.name) return;
+  if (editingId) {
+    Object.assign(items.find(i => i.id === editingId), data);
+  } else {
+    items.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), history: [], ...data });
+  }
+  save(); render();
+});
+
+// ---- バックアップ ----
+btnExport.onclick = () => {
+  const blob = new Blob([JSON.stringify(items, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `日用品バックアップ_${todayStr()}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+btnImport.onclick = () => fileImport.click();
+fileImport.onchange = async () => {
+  const f = fileImport.files[0]; if (!f) return;
+  try {
+    const data = JSON.parse(await f.text());
+    if (!Array.isArray(data)) throw 0;
+    if (!confirm(`${data.length}件のデータで今の一覧を置きかえますか？`)) return;
+    items = data; save(); render();
+  } catch { alert("このファイルは読み込めませんでした。"); }
+  fileImport.value = "";
+};
+
+render();
+
+// 日付が変わったら表示を更新（アプリを開きっぱなしのとき用）
+document.addEventListener("visibilitychange", () => { if (!document.hidden) render(); });
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+</script>
+</body>
+</html>
