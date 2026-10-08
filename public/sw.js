@@ -1,5 +1,5 @@
 // オフラインでも開けるようにするための仕組み（Service Worker）
-const CACHE = "nichiyouhin-3";
+const CACHE = "nichiyouhin-4";
 const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {

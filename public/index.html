@@ -121,7 +121,7 @@
   .busy { opacity: .6; pointer-events: none; }
   [hidden] { display: none !important; }
 
-  .gate { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
+  .gate { min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: calc(16vh + env(safe-area-inset-top, 0px)) 16px 24px; }
   .gate-box { width: min(380px, 100%); background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 24px 20px; text-align: center; }
   .gate-box img { width: 72px; height: 72px; border-radius: 16px; }
   .gate-box h1 { margin: 10px 0 4px; }
