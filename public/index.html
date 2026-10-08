@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#f6f4ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1c1b19" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="こうかん帳">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>日用品こうかん帳</title>
+<style>
+  :root {
+    --bg: #f6f4ef;
+    --card: #ffffff;
+    --text: #2b2a28;
+    --sub: #77736b;
+    --line: #e4e0d7;
+    --accent: #3c7a5a;
+    --accent-weak: #e3efe8;
+    --ok: #3c7a5a;
+    --soon: #c98a12;
+    --soon-weak: #fbf1dc;
+    --over: #c2453a;
+    --over-weak: #fae4e1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1b19;
+      --card: #262522;
+      --text: #ece9e2;
+      --sub: #a29d93;
+      --line: #3a3833;
+      --accent: #6fbf94;
+      --accent-weak: #24372c;
+      --ok: #6fbf94;
+      --soon: #e3b04f;
+      --soon-weak: #3b3120;
+      --over: #ec7b70;
+      --over-weak: #402523;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: calc(16px + env(safe-area-inset-top, 0px)) 16px 96px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 0 16px; }
+  h1 { font-size: 1.35rem; margin: 0; }
+  .today { color: var(--sub); font-size: .85rem; }
+
+  .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+  .sum { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px; text-align: center; cursor: pointer; }
+  .sum b { display: block; font-size: 1.5rem; }
+  .sum span { font-size: .8rem; color: var(--sub); }
+  .sum.over b { color: var(--over); }
+  .sum.soon b { color: var(--soon); }
+  .sum.ok b { color: var(--ok); }
+  .sum.active { outline: 2px solid var(--accent); }
+
+  .filters { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 10px; }
+  .chip { flex: none; border: 1px solid var(--line); background: var(--card); color: var(--text); border-radius: 999px; padding: 5px 12px; font-size: .85rem; cursor: pointer; }
+  .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .list { display: flex; flex-direction: column; gap: 10px; }
+  .item { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+  .item.over { border-left: 6px solid var(--over); }
+  .item.soon { border-left: 6px solid var(--soon); }
+  .item.ok { border-left: 6px solid var(--ok); }
+  .row1 { display: flex; align-items: center; gap: 10px; }
+  .icon { font-size: 1.6rem; width: 2rem; text-align: center; }
+  .name { font-weight: bold; font-size: 1.05rem; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .badge { font-size: .8rem; font-weight: bold; padding: 2px 10px; border-radius: 999px; white-space: nowrap; }
+  .badge.over { background: var(--over-weak); color: var(--over); }
+  .badge.soon { background: var(--soon-weak); color: var(--soon); }
+  .badge.ok { background: var(--accent-weak); color: var(--ok); }
+  .bar { height: 6px; background: var(--line); border-radius: 3px; margin: 10px 0 6px; overflow: hidden; }
+  .bar i { display: block; height: 100%; border-radius: 3px; }
+  .meta { font-size: .8rem; color: var(--sub); display: flex; flex-wrap: wrap; gap: 4px 14px; }
+  .memo { font-size: .85rem; margin-top: 4px; white-space: pre-wrap; }
+  .actions { display: flex; gap: 8px; margin-top: 10px; }
+  button { font: inherit; }
+  .btn { border: 1px solid var(--line); background: var(--card); color: var(--text); border-radius: 10px; padding: 8px 12px; cursor: pointer; font-size: .9rem; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: bold; flex: 1; }
+  .btn.danger { color: var(--over); }
+
+  .empty { text-align: center; color: var(--sub); padding: 40px 10px; }
+
+  .fab { position: fixed; right: 20px; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); width: 60px; height: 60px; border-radius: 50%; border: none; background: var(--accent); color: #fff; font-size: 2rem; box-shadow: 0 4px 14px rgba(0,0,0,.25); cursor: pointer; }
+
+  .tools { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .tools .btn { font-size: .8rem; color: var(--sub); }
+
+  dialog { border: none; border-radius: 16px; padding: 0; width: min(520px, calc(100% - 24px)); background: var(--card); color: var(--text); }
+  dialog::backdrop { background: rgba(0,0,0,.45); }
+  .dlg { padding: 18px; }
+  .dlg h2 { margin: 0 0 12px; font-size: 1.15rem; }
+  label { display: block; font-size: .85rem; color: var(--sub); margin: 10px 0 4px; }
+  input, select, textarea { width: 100%; font: inherit; padding: 9px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text); }
+  textarea { min-height: 60px; resize: vertical; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+  .presets .chip { font-size: .8rem; }
+  .interval { display: flex; gap: 6px; }
+  .interval input { flex: 1; }
+  .interval select { width: 6.5em; }
+  .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+  .history { font-size: .8rem; color: var(--sub); margin-top: 6px; }
+
+  .head-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .me-btn { border: none; background: none; color: var(--accent); font-size: .85rem; padding: 0; cursor: pointer; }
+  .notice { background: var(--soon-weak); color: var(--soon); border-radius: 10px; padding: 8px 12px; font-size: .85rem; margin-bottom: 12px; }
+  .busy { opacity: .6; pointer-events: none; }
+  [hidden] { display: none !important; }
+
+  .gate { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
+  .gate-box { width: min(380px, 100%); background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 24px 20px; text-align: center; }
+  .gate-box img { width: 72px; height: 72px; border-radius: 16px; }
+  .gate-box h1 { margin: 10px 0 4px; }
+  .gate-box p { color: var(--sub); font-size: .9rem; margin: 0 0 16px; }
+  .gate-box .btn.primary { width: 100%; margin-top: 12px; padding: 11px; }
+  .err { color: var(--over); font-size: .85rem; margin-top: 10px; min-height: 1.3em; }
+</style>
+</head>
+<body>
+<!-- 合言葉の画面 -->
+<div class="gate" id="gate" hidden>
+  <form class="gate-box" id="gateForm">
+    <img src="icon-192.png" alt="">
+    <h1>日用品こうかん帳</h1>
+    <p>家族の合言葉を入れてください</p>
+    <input id="gPass" type="password" autocomplete="current-password" placeholder="合言葉" required>
+    <button class="btn primary" type="submit">はじめる</button>
+    <div class="err" id="gErr"></div>
+  </form>
+</div>
+
+<div class="wrap" id="app" hidden>
+  <header>
+    <h1>🧺 日用品こうかん帳</h1>
+    <div class="head-right">
+      <div class="today" id="today"></div>
+      <button class="me-btn" id="btnMe"></button>
+    </div>
+  </header>
+
+  <div class="notice" id="notice" hidden></div>
+
+  <div class="summary">
+    <div class="sum over" data-st="over"><b id="cOver">0</b><span>期限切れ</span></div>
+    <div class="sum soon" data-st="soon"><b id="cSoon">0</b><span>もうすぐ</span></div>
+    <div class="sum ok" data-st="ok"><b id="cOk">0</b><span>まだ大丈夫</span></div>
+  </div>
+
+  <div class="filters" id="filters"></div>
+  <div class="list" id="list"></div>
+
+  <div class="tools">
+    <button class="btn" id="btnExport">💾 バックアップを保存</button>
+    <button class="btn" id="btnImport">📂 バックアップから入れる</button>
+    <input type="file" id="fileImport" accept=".json,application/json" hidden>
+  </div>
+</div>
+
+<button class="fab" id="btnAdd" aria-label="追加" hidden>＋</button>
+
+<dialog id="dlg">
+  <form class="dlg" method="dialog" id="form">
+    <h2 id="dlgTitle">日用品を追加</h2>
+    <div id="presetArea">
+      <label>よく使うものから選ぶ（タップで入力）</label>
+      <div class="presets" id="presets"></div>
+    </div>
+    <label for="fName">名前</label>
+    <input id="fName" required placeholder="例：歯ブラシ（パパ）">
+    <div class="two">
+      <div>
+        <label for="fCat">分類</label>
+        <select id="fCat"></select>
+      </div>
+      <div>
+        <label for="fInterval">交換の目安</label>
+        <div class="interval">
+          <input id="fInterval" type="number" min="1" required value="30">
+          <select id="fUnit">
+            <option value="1">日ごと</option>
+            <option value="7">週ごと</option>
+            <option value="30">か月ごと</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <label for="fStart">使い始めた日（前回交換した日）</label>
+    <input id="fStart" type="date" required>
+    <label for="fMemo">メモ（品番・買う店など）</label>
+    <textarea id="fMemo" placeholder="例：〇〇ドラッグで3本セット"></textarea>
+    <div class="history" id="fHistory"></div>
+    <div class="dlg-actions">
+      <button type="button" class="btn" id="btnCancel">やめる</button>
+      <button type="submit" class="btn primary" style="flex:none">保存</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="meDlg">
+  <form class="dlg" method="dialog" id="meForm">
+    <h2>あなたの名前</h2>
+    <p class="history" style="margin:0">「今日交換した」を押したとき、誰が交換したかを家族に見せるために使います。このスマホだけの設定です。</p>
+    <label for="fMe">名前（例：パパ、ママ）</label>
+    <input id="fMe" maxlength="30" placeholder="空のままでもOK">
+    <div class="dlg-actions">
+      <button type="submit" class="btn primary" style="flex:none">決定</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+const CACHE_KEY = "nichiyouhin-cache";
+const ME_KEY = "nichiyouhin-me";
+const SOON_DAYS = 7;
+const CATS = [
+  { id: "bath", label: "洗面・お風呂", icon: "🪥" },
+  { id: "kitchen", label: "キッチン", icon: "🍳" },
+  { id: "clean", label: "掃除・洗濯", icon: "🧽" },
+  { id: "home", label: "家電・住まい", icon: "🏠" },
+  { id: "bed", label: "寝具・衣類", icon: "🛏️" },
+  { id: "kids", label: "こども", icon: "🧸" },
+  { id: "other", label: "その他", icon: "📦" },
+];
+const PRESETS = [
+  ["歯ブラシ", "bath", 30], ["カミソリの刃", "bath", 14], ["バスタオル", "bath", 365],
+  ["キッチンスポンジ", "kitchen", 30], ["浄水器カートリッジ", "kitchen", 90], ["まな板", "kitchen", 365],
+  ["排水口ネット", "kitchen", 7], ["換気扇フィルター", "home", 90], ["エアコンフィルター掃除", "home", 14],
+  ["空気清浄機フィルター", "home", 365], ["火災報知器の電池", "home", 3650], ["枕", "bed", 730],
+  ["お風呂のスポンジ", "clean", 60], ["トイレブラシ", "clean", 180],
+];
+
+// ---- このスマホだけの保存（失敗しても動くように） ----
+function getLocal(k) { try { return localStorage.getItem(k); } catch { return null; } }
+function setLocal(k, v) { try { localStorage.setItem(k, v); } catch {} }
+
+let items = [];
+let online = true;
+let filterCat = "all";
+let filterSt = null;
+let editingId = null;
+let me = getLocal(ME_KEY) || "";
+
+// ---- サーバーとのやりとり ----
+class NeedLogin extends Error {}
+async function api(path, data) {
+  let res;
+  try {
+    res = await fetch("/api/" + path, data === undefined ? {} : {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(data),
+    });
+  } catch {
+    throw new Error("インターネットにつながっていないようです");
+  }
+  const body = await res.json().catch(() => ({}));
+  if (res.status === 401 && body.needLogin) throw new NeedLogin();
+  if (!res.ok) throw new Error(body.error || "うまくいきませんでした");
+  return body;
+}
+
+function setItems(data) {
+  items = data.items || [];
+  setLocal(CACHE_KEY, JSON.stringify(items));
+}
+
+async function refresh() {
+  try {
+    setItems(await api("items"));
+    online = true;
+    showApp();
+  } catch (e) {
+    if (e instanceof NeedLogin) return showGate();
+    // つながらないときは、前に見た内容を表示だけする
+    online = false;
+    try { items = JSON.parse(getLocal(CACHE_KEY)) || []; } catch { items = []; }
+    showApp();
+  }
+}
+
+// 画面の操作をサーバーに送る。終わったら最新の一覧で描き直す
+async function send(path, data) {
+  document.body.classList.add("busy");
+  try {
+    setItems(await api(path, data));
+    online = true;
+    render();
+    return true;
+  } catch (e) {
+    if (e instanceof NeedLogin) { showGate(); return false; }
+    alert(e.message);
+    return false;
+  } finally {
+    document.body.classList.remove("busy");
+  }
+}
+
+// ---- 合言葉 ----
+function showGate() {
+  gate.hidden = false; app.hidden = true; btnAdd.hidden = true;
+  gPass.focus();
+}
+gateForm.addEventListener("submit", async e => {
+  e.preventDefault();
+  gErr.textContent = "";
+  try {
+    await api("login", { pass: gPass.value });
+    gPass.value = "";
+    await refresh();
+    if (!getLocal(ME_KEY)) openMe();
+  } catch (err) {
+    gErr.textContent = err.message;
+  }
+});
+
+function showApp() {
+  gate.hidden = true; app.hidden = false; btnAdd.hidden = !online;
+  render();
+}
+
+// ---- 名前 ----
+function openMe() { fMe.value = me; meDlg.showModal(); }
+meForm.addEventListener("submit", () => {
+  me = fMe.value.trim().slice(0, 30);
+  setLocal(ME_KEY, me);
+  render();
+});
+btnMe.onclick = openMe;
+
+// ---- 日付 ----
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+function parse(s) { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); }
+function addDays(s, n) { const d = parse(s); d.setDate(d.getDate()+n); return d; }
+function diffDays(a, b) { return Math.round((a - b) / 86400000); }
+function fmt(d) { if (typeof d === "string") d = parse(d); return `${d.getMonth()+1}/${d.getDate()}`; }
+function fmtFull(d) { if (typeof d === "string") d = parse(d); return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`; }
+
+function intervalText(days) {
+  if (days % 365 === 0) return `${days/365}年ごと`;
+  if (days % 30 === 0) return `${days/30}か月ごと`;
+  if (days % 7 === 0) return `${days/7}週間ごと`;
+  return `${days}日ごと`;
+}
+
+function status(it) {
+  const due = addDays(it.start, it.interval);
+  const left = diffDays(due, parse(todayStr()));
+  const used = diffDays(parse(todayStr()), parse(it.start));
+  const st = left < 0 ? "over" : left <= Math.min(SOON_DAYS, Math.ceil(it.interval * 0.25)) ? "soon" : "ok";
+  return { due, left, used, st, ratio: Math.min(1, Math.max(0, used / it.interval)) };
+}
+
+// ---- 描画 ----
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function cat(id) { return CATS.find(c => c.id === id) || CATS[CATS.length-1]; }
+
+function render() {
+  today.textContent = "今日 " + fmtFull(todayStr());
+  btnMe.textContent = me ? `👤 ${me}` : "👤 名前を設定";
+  notice.hidden = online;
+  notice.textContent = "インターネットにつながっていないため、前に見た内容を表示しています（変更はできません）";
+
+  const withSt = items.map(it => ({ it, s: status(it) }));
+  const count = { over: 0, soon: 0, ok: 0 };
+  withSt.forEach(x => count[x.s.st]++);
+  cOver.textContent = count.over; cSoon.textContent = count.soon; cOk.textContent = count.ok;
+  document.querySelectorAll(".sum").forEach(el => el.classList.toggle("active", el.dataset.st === filterSt));
+
+  // 分類フィルター
+  const used = new Set(items.map(i => i.cat));
+  if (filterCat !== "all" && !used.has(filterCat)) filterCat = "all";
+  const chips = [`<button class="chip ${filterCat==="all"?"active":""}" data-cat="all">すべて</button>`]
+    .concat(CATS.filter(c => used.has(c.id)).map(c =>
+      `<button class="chip ${filterCat===c.id?"active":""}" data-cat="${c.id}">${c.icon} ${c.label}</button>`));
+  filters.innerHTML = chips.join("");
+
+  const shown = withSt
+    .filter(x => filterCat === "all" || x.it.cat === filterCat)
+    .filter(x => !filterSt || x.s.st === filterSt)
+    .sort((a, b) => a.s.left - b.s.left || a.it.name.localeCompare(b.it.name, "ja"));
+
+  if (!items.length) {
+    list.innerHTML = `<div class="empty">まだ何も登録されていません。<br>右下の <b>＋</b> から追加してください。</div>`;
+    return;
+  }
+  if (!shown.length) {
+    list.innerHTML = `<div class="empty">この条件に当てはまるものはありません。</div>`;
+    return;
+  }
+
+  const dis = online ? "" : "disabled";
+  list.innerHTML = shown.map(({ it, s }) => {
+    const c = cat(it.cat);
+    const badge = s.left < 0 ? `${-s.left}日すぎ` : s.left === 0 ? "今日まで" : `あと${s.left}日`;
+    return `<div class="item ${s.st}">
+      <div class="row1">
+        <div class="icon">${c.icon}</div>
+        <div class="name">${esc(it.name)}</div>
+        <span class="badge ${s.st}">${badge}</span>
+      </div>
+      <div class="bar"><i style="width:${s.ratio*100}%;background:var(--${s.st})"></i></div>
+      <div class="meta">
+        <span>交換日 ${fmt(s.due)}</span>
+        <span>${intervalText(it.interval)}</span>
+        <span>使い始め ${fmt(it.start)}（${s.used}日目）${it.doneBy ? "・" + esc(it.doneBy) + "が交換" : ""}</span>
+      </div>
+      ${it.memo ? `<div class="memo">📝 ${esc(it.memo)}</div>` : ""}
+      <div class="actions">
+        <button class="btn primary" data-act="done" data-id="${it.id}" ${dis}>✅ 今日交換した</button>
+        <button class="btn" data-act="edit" data-id="${it.id}" ${dis}>編集</button>
+        <button class="btn danger" data-act="del" data-id="${it.id}" ${dis}>削除</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ---- 操作 ----
+filters.addEventListener("click", e => {
+  const b = e.target.closest("[data-cat]"); if (!b) return;
+  filterCat = b.dataset.cat; render();
+});
+document.querySelector(".summary").addEventListener("click", e => {
+  const b = e.target.closest("[data-st]"); if (!b) return;
+  filterSt = filterSt === b.dataset.st ? null : b.dataset.st; render();
+});
+list.addEventListener("click", e => {
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const it = items.find(i => i.id === b.dataset.id); if (!it) return;
+  if (b.dataset.act === "done") {
+    if (it.start === todayStr()) return alert("今日すでに交換済みになっています。");
+    if (!confirm(`「${it.name}」を今日交換したことにしますか？`)) return;
+    send("item/done", { id: it.id, me });
+  } else if (b.dataset.act === "edit") {
+    openDialog(it);
+  } else if (b.dataset.act === "del") {
+    if (!confirm(`「${it.name}」を一覧から消しますか？\n（家族みんなの一覧から消えます。元に戻せません）`)) return;
+    send("item/delete", { id: it.id });
+  }
+});
+
+// ---- 追加・編集ダイアログ ----
+fCat.innerHTML = CATS.map(c => `<option value="${c.id}">${c.icon} ${c.label}</option>`).join("");
+presets.innerHTML = PRESETS.map(([n, c], i) => `<button type="button" class="chip" data-p="${i}">${cat(c).icon} ${n}</button>`).join("");
+presets.addEventListener("click", e => {
+  const b = e.target.closest("[data-p]"); if (!b) return;
+  const [n, c, d] = PRESETS[b.dataset.p];
+  fName.value = n; fCat.value = c; setIntervalField(d);
+});
+
+function setIntervalField(days) {
+  if (days % 30 === 0) { fUnit.value = "30"; fInterval.value = days / 30; }
+  else if (days % 7 === 0) { fUnit.value = "7"; fInterval.value = days / 7; }
+  else { fUnit.value = "1"; fInterval.value = days; }
+}
+
+function openDialog(it) {
+  editingId = it ? it.id : null;
+  dlgTitle.textContent = it ? "編集" : "日用品を追加";
+  presetArea.hidden = !!it;
+  fName.value = it ? it.name : "";
+  fCat.value = it ? it.cat : "bath";
+  setIntervalField(it ? it.interval : 30);
+  fStart.value = it ? it.start : todayStr();
+  fMemo.value = it ? (it.memo || "") : "";
+  const hist = it ? it.history.concat({ date: it.start, by: it.doneBy }) : [];
+  fHistory.textContent = hist.length > 1
+    ? "これまでの交換日：" + hist.map(h => fmtFull(h.date) + (h.by ? `（${h.by}）` : "")).join(" → ") : "";
+  dlg.showModal();
+}
+btnAdd.onclick = () => openDialog(null);
+btnCancel.onclick = () => dlg.close();
+
+form.addEventListener("submit", async e => {
+  e.preventDefault();
+  const data = {
+    id: editingId || "",
+    name: fName.value.trim(),
+    cat: fCat.value,
+    interval: Math.max(1, Number(fInterval.value) * Number(fUnit.value)),
+    start: fStart.value || todayStr(),
+    memo: fMemo.value.trim(),
+    me,
+  };
+  if (!data.name) return;
+  if (await send("item", data)) dlg.close();
+});
+
+// ---- バックアップ ----
+btnExport.onclick = () => {
+  const blob = new Blob([JSON.stringify(items, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `日用品バックアップ_${todayStr()}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+btnImport.onclick = () => fileImport.click();
+fileImport.onchange = async () => {
+  const f = fileImport.files[0]; if (!f) return;
+  fileImport.value = "";
+  let data;
+  try {
+    data = JSON.parse(await f.text());
+    if (!Array.isArray(data)) throw 0;
+  } catch { return alert("このファイルは読み込めませんでした。"); }
+  let replace = false;
+  if (items.length) {
+    replace = confirm(`今の一覧（${items.length}件）を消して、バックアップの${data.length}件と入れかえますか？\n\n「キャンセル」を押すと、入れかえずに追加するか選べます。`);
+    if (!replace && !confirm(`今の一覧はそのままで、バックアップの${data.length}件を追加しますか？`)) return;
+  } else if (!confirm(`バックアップの${data.length}件を入れますか？`)) return;
+  if (await send("import", { items: data, replace, me })) alert("入れました。");
+};
+
+// 別のアプリから戻ってきたら、家族の変更を読み直す
+document.addEventListener("visibilitychange", () => { if (!document.hidden && !app.hidden) refresh(); });
+
+refresh();
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+</script>
+</body>
+</html>

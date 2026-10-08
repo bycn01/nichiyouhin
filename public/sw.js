@@ -1,5 +1,5 @@
 // オフラインでも開けるようにするための仕組み（Service Worker）
-const CACHE = "nichiyouhin-1";
+const CACHE = "nichiyouhin-2";
 const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {
@@ -14,7 +14,9 @@ self.addEventListener("activate", e => {
 });
 self.addEventListener("fetch", e => {
   const req = e.request;
-  if (req.method !== "GET" || new URL(req.url).origin !== location.origin) return;
+  const url = new URL(req.url);
+  // データ（/api/）は毎回サーバーから。保存しておくのは画面のファイルだけ
+  if (req.method !== "GET" || url.origin !== location.origin || url.pathname.startsWith("/api/")) return;
   // ネットにつながれば最新を、つながらなければ保存しておいたものを表示
   e.respondWith(
     fetch(req)

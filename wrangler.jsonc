@@ -1,0 +1,17 @@
+// Cloudflare の設定ファイル
+{
+  "name": "nichiyouhin",
+  "main": "src/worker.js",
+  "compatibility_date": "2025-09-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "nichiyouhin",
+      "database_id": "85457716-d687-437b-93cc-de4b9cb8da95"
+    }
+  ]
+}
