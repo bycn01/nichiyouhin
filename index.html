@@ -4,49 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
+<meta http-equiv="refresh" content="0; url=https://nichiyouhin.sana-family.workers.dev/">
 <title>日用品こうかん帳（引っ越しました）</title>
 <style>
-  :root { --bg: #f6f4ef; --card: #fff; --text: #2b2a28; --sub: #77736b; --line: #e4e0d7; --accent: #3c7a5a; }
-  @media (prefers-color-scheme: dark) {
-    :root { --bg: #1c1b19; --card: #262522; --text: #ece9e2; --sub: #a29d93; --line: #3a3833; --accent: #6fbf94; }
-  }
-  body { margin: 0; background: var(--bg); color: var(--text); font-family: "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif; line-height: 1.6; }
-  .box { max-width: 420px; margin: 60px auto; padding: 24px 20px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; text-align: center; }
-  h1 { font-size: 1.2rem; margin: 0 0 8px; }
-  p { color: var(--sub); font-size: .9rem; }
-  a, button { display: block; width: 100%; box-sizing: border-box; margin-top: 12px; padding: 12px; border-radius: 10px; font: inherit; font-weight: bold; text-decoration: none; cursor: pointer; }
-  a { background: var(--accent); color: #fff; border: none; }
-  button { background: none; color: var(--accent); border: 1px solid var(--accent); }
+  :root { --bg: #f6f4ef; --text: #2b2a28; --accent: #3c7a5a; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #1c1b19; --text: #ece9e2; --accent: #6fbf94; } }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif; text-align: center; padding: 80px 16px; }
+  a { color: var(--accent); }
 </style>
 </head>
 <body>
-<div class="box">
-  <h1>🧺 日用品こうかん帳は<br>家族で共有できる新しい場所に移りました</h1>
-  <p>下のボタンから新しいページを開いて、<br>ホーム画面に追加しなおしてください。</p>
-  <div id="old" hidden>
-    <p>このスマホには前のデータが残っています。<br>先に保存して、新しいページの「バックアップから入れる」で取り込めます。</p>
-    <button id="save">💾 前のデータを保存する</button>
-  </div>
-  <a id="go" href="https://nichiyouhin.sana-family.workers.dev/">新しいページを開く</a>
-</div>
+<p>日用品こうかん帳は新しい場所に移りました。<br><a href="https://nichiyouhin.sana-family.workers.dev/">新しいページを開く</a></p>
 <script>
-let data = null;
-try { data = JSON.parse(localStorage.getItem("nichiyouhin-v1")); } catch {}
-if (Array.isArray(data) && data.length) {
-  document.getElementById("old").hidden = false;
-  document.getElementById("save").onclick = () => {
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
-    a.download = "日用品バックアップ.json";
-    a.click();
-  };
-} else {
-  location.replace(document.getElementById("go").href);
-}
-// 前の版の「オフライン用の保存」を片づける
+// 前の版の「オフライン用の保存」を片づけてから移動する
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister())).catch(() => {});
 }
+location.replace("https://nichiyouhin.sana-family.workers.dev/");
 </script>
 </body>
 </html>

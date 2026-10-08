@@ -96,8 +96,6 @@
 
   .fab { position: fixed; right: 20px; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); width: 60px; height: 60px; border-radius: 50%; border: none; background: var(--accent); color: #fff; font-size: 2rem; box-shadow: 0 4px 14px rgba(0,0,0,.25); cursor: pointer; }
 
-  .tools { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-  .tools .btn { font-size: .8rem; color: var(--sub); }
 
   dialog { border: none; border-radius: 16px; padding: 0; width: min(520px, calc(100% - 24px)); background: var(--card); color: var(--text); }
   dialog::backdrop { background: rgba(0,0,0,.45); }
@@ -159,12 +157,6 @@
 
   <div class="filters" id="filters"></div>
   <div class="list" id="list"></div>
-
-  <div class="tools">
-    <button class="btn" id="btnExport">💾 バックアップを保存</button>
-    <button class="btn" id="btnImport">📂 バックアップから入れる</button>
-    <input type="file" id="fileImport" accept=".json,application/json" hidden>
-  </div>
 </div>
 
 <button class="fab" id="btnAdd" aria-label="追加" hidden>＋</button>
@@ -470,32 +462,6 @@ form.addEventListener("submit", async e => {
   if (!data.name) return;
   if (await send("item", data)) dlg.close();
 });
-
-// ---- バックアップ ----
-btnExport.onclick = () => {
-  const blob = new Blob([JSON.stringify(items, null, 2)], { type: "application/json" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `日用品バックアップ_${todayStr()}.json`;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-};
-btnImport.onclick = () => fileImport.click();
-fileImport.onchange = async () => {
-  const f = fileImport.files[0]; if (!f) return;
-  fileImport.value = "";
-  let data;
-  try {
-    data = JSON.parse(await f.text());
-    if (!Array.isArray(data)) throw 0;
-  } catch { return alert("このファイルは読み込めませんでした。"); }
-  let replace = false;
-  if (items.length) {
-    replace = confirm(`今の一覧（${items.length}件）を消して、バックアップの${data.length}件と入れかえますか？\n\n「キャンセル」を押すと、入れかえずに追加するか選べます。`);
-    if (!replace && !confirm(`今の一覧はそのままで、バックアップの${data.length}件を追加しますか？`)) return;
-  } else if (!confirm(`バックアップの${data.length}件を入れますか？`)) return;
-  if (await send("import", { items: data, replace })) alert("入れました。");
-};
 
 // 別のアプリから戻ってきたら、家族の変更を読み直す
 document.addEventListener("visibilitychange", () => { if (!document.hidden && !app.hidden) refresh(); });

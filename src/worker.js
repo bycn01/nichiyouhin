@@ -51,15 +51,6 @@ export default {
         case 'POST /api/item/delete':
           await env.DB.prepare('DELETE FROM items WHERE id = ?').bind(String((await body(request)).id || '')).run();
           return json(await getItems(env.DB));
-        case 'POST /api/import': {
-          // バックアップから入れる（replace のときは今の一覧を消してから入れる）
-          const b = await body(request);
-          if (!Array.isArray(b.items) || b.items.length > 500) throw new UserError('バックアップの中身が正しくありません');
-          const stmts = b.replace ? [env.DB.prepare('DELETE FROM items')] : [];
-          for (const it of b.items) stmts.push(insertStmt(env.DB, clean(it), name(b.me)));
-          await env.DB.batch(stmts);
-          return json(await getItems(env.DB));
-        }
       }
       return json({ error: 'ページが見つかりません' }, 404);
     } catch (e) {
