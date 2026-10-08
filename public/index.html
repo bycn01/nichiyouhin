@@ -115,8 +115,6 @@
   .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
   .history { font-size: .8rem; color: var(--sub); margin-top: 6px; }
 
-  .head-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
-  .me-btn { border: none; background: none; color: var(--accent); font-size: .85rem; padding: 0; cursor: pointer; }
   .notice { background: var(--soon-weak); color: var(--soon); border-radius: 10px; padding: 8px 12px; font-size: .85rem; margin-bottom: 12px; }
   .busy { opacity: .6; pointer-events: none; }
   [hidden] { display: none !important; }
@@ -148,10 +146,7 @@
 <div class="wrap" id="app" hidden>
   <header>
     <h1>🧺 日用品こうかん帳</h1>
-    <div class="head-right">
-      <div class="today" id="today"></div>
-      <button class="me-btn" id="btnMe"></button>
-    </div>
+    <div class="today" id="today"></div>
   </header>
 
   <div class="notice" id="notice" hidden></div>
@@ -212,21 +207,8 @@
   </form>
 </dialog>
 
-<dialog id="meDlg">
-  <form class="dlg" method="dialog" id="meForm">
-    <h2>あなたの名前</h2>
-    <p class="history" style="margin:0">「今日交換した」を押したとき、誰が交換したかを家族に見せるために使います。このスマホだけの設定です。</p>
-    <label for="fMe">名前（例：パパ、ママ）</label>
-    <input id="fMe" maxlength="30" placeholder="空のままでもOK">
-    <div class="dlg-actions">
-      <button type="submit" class="btn primary" style="flex:none">決定</button>
-    </div>
-  </form>
-</dialog>
-
 <script>
 const CACHE_KEY = "nichiyouhin-cache";
-const ME_KEY = "nichiyouhin-me";
 const SOON_DAYS = 7;
 const CATS = [
   { id: "bath", label: "洗面・お風呂", icon: "🪥" },
@@ -254,7 +236,6 @@ let online = true;
 let filterCat = "all";
 let filterSt = null;
 let editingId = null;
-let me = getLocal(ME_KEY) || "";
 
 // ---- サーバーとのやりとり ----
 class NeedLogin extends Error {}
@@ -321,7 +302,6 @@ gateForm.addEventListener("submit", async e => {
     await api("login", { pass: gPass.value });
     gPass.value = "";
     await refresh();
-    if (!getLocal(ME_KEY)) openMe();
   } catch (err) {
     gErr.textContent = err.message;
   }
@@ -332,14 +312,6 @@ function showApp() {
   render();
 }
 
-// ---- 名前 ----
-function openMe() { fMe.value = me; meDlg.showModal(); }
-meForm.addEventListener("submit", () => {
-  me = fMe.value.trim().slice(0, 30);
-  setLocal(ME_KEY, me);
-  render();
-});
-btnMe.onclick = openMe;
 
 // ---- 日付 ----
 function todayStr() {
@@ -373,7 +345,6 @@ function cat(id) { return CATS.find(c => c.id === id) || CATS[CATS.length-1]; }
 
 function render() {
   today.textContent = "今日 " + fmtFull(todayStr());
-  btnMe.textContent = me ? `👤 ${me}` : "👤 名前を設定";
   notice.hidden = online;
   notice.textContent = "インターネットにつながっていないため、前に見た内容を表示しています（変更はできません）";
 
@@ -419,7 +390,7 @@ function render() {
       <div class="meta">
         <span>交換日 ${fmt(s.due)}</span>
         <span>${intervalText(it.interval)}</span>
-        <span>使い始め ${fmt(it.start)}（${s.used}日目）${it.doneBy ? "・" + esc(it.doneBy) + "が交換" : ""}</span>
+        <span>使い始め ${fmt(it.start)}（${s.used}日目）</span>
       </div>
       ${it.memo ? `<div class="memo">📝 ${esc(it.memo)}</div>` : ""}
       <div class="actions">
@@ -446,7 +417,7 @@ list.addEventListener("click", e => {
   if (b.dataset.act === "done") {
     if (it.start === todayStr()) return alert("今日すでに交換済みになっています。");
     if (!confirm(`「${it.name}」を今日交換したことにしますか？`)) return;
-    send("item/done", { id: it.id, me });
+    send("item/done", { id: it.id });
   } else if (b.dataset.act === "edit") {
     openDialog(it);
   } else if (b.dataset.act === "del") {
@@ -479,9 +450,8 @@ function openDialog(it) {
   setIntervalField(it ? it.interval : 30);
   fStart.value = it ? it.start : todayStr();
   fMemo.value = it ? (it.memo || "") : "";
-  const hist = it ? it.history.concat({ date: it.start, by: it.doneBy }) : [];
-  fHistory.textContent = hist.length > 1
-    ? "これまでの交換日：" + hist.map(h => fmtFull(h.date) + (h.by ? `（${h.by}）` : "")).join(" → ") : "";
+  const hist = it ? it.history.map(h => h.date).concat(it.start) : [];
+  fHistory.textContent = hist.length > 1 ? "これまでの交換日：" + hist.map(fmtFull).join(" → ") : "";
   dlg.showModal();
 }
 btnAdd.onclick = () => openDialog(null);
@@ -496,7 +466,6 @@ form.addEventListener("submit", async e => {
     interval: Math.max(1, Number(fInterval.value) * Number(fUnit.value)),
     start: fStart.value || todayStr(),
     memo: fMemo.value.trim(),
-    me,
   };
   if (!data.name) return;
   if (await send("item", data)) dlg.close();
@@ -525,7 +494,7 @@ fileImport.onchange = async () => {
     replace = confirm(`今の一覧（${items.length}件）を消して、バックアップの${data.length}件と入れかえますか？\n\n「キャンセル」を押すと、入れかえずに追加するか選べます。`);
     if (!replace && !confirm(`今の一覧はそのままで、バックアップの${data.length}件を追加しますか？`)) return;
   } else if (!confirm(`バックアップの${data.length}件を入れますか？`)) return;
-  if (await send("import", { items: data, replace, me })) alert("入れました。");
+  if (await send("import", { items: data, replace })) alert("入れました。");
 };
 
 // 別のアプリから戻ってきたら、家族の変更を読み直す

@@ -27,7 +27,7 @@ export default {
       }
       const route = request.method + ' ' + url.pathname;
 
-      if (route === 'POST /api/login') return login(request, env);
+      if (route === 'POST /api/login') return await login(request, env);
       if (!(await loggedIn(request, env))) return json({ error: '合言葉を入れてください', needLogin: true }, 401);
 
       switch (route) {
